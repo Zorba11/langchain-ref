@@ -1,0 +1,39 @@
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import LLMChain
+from langchain.prompts import HumanMessagePromptTemplate, ChatPromptTemplate,MessagesPlaceholder
+from langchain.memory import ConversationSummaryMemory, FileChatMessageHistory
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+
+chat = ChatOpenAI(verbose=True)
+
+memory = ConversationSummaryMemory(
+  chat_memory=FileChatMessageHistory("messages.json"),
+  memory_key="messages", return_messages=True,
+  llm=chat, # ConversationSummaryMemory have it's own llm chain so, we need to pass the llm for it
+  ) # messages will be the key in the memory
+
+prompt = ChatPromptTemplate(
+  input_variables=["content", "messages"],
+  messages=[
+    MessagesPlaceholder(variable_name="messages"),
+    HumanMessagePromptTemplate.from_template("{content}"),
+  ]
+)
+
+chain = LLMChain(
+  llm=chat,
+  prompt=prompt,
+  memory=memory,
+  verbose=True,
+)
+
+while True:
+  content = input(">> ")
+
+  result = chain({"content": content})
+
+  print(result["text"])
